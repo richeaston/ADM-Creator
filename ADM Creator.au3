@@ -1,3 +1,10 @@
+#Region ;**** Directives created by AutoIt3Wrapper_GUI ****
+#AutoIt3Wrapper_Icon=ADM Creator.ico
+#AutoIt3Wrapper_Outfile=ADM-Creator-Ver2.exe
+#AutoIt3Wrapper_Res_Comment=Gui For creating ADM files for Group Policy
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.1
+#AutoIt3Wrapper_Res_Fileversion_AutoIncrement=y
+#EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #cs ----------------------------------------------------------------------------
 
  AutoIt Version: 3.3.14.2
@@ -40,6 +47,8 @@ Func ADM_Creator()
 	$Policy = GUICtrlCreateGroup(" Policy Details ", 8, 120, 657, 321)
 	$Policies = GUICtrlCreateEdit("", 17, 140, 633, 289, BitOR($ES_AUTOVSCROLL,$ES_AUTOHSCROLL,$ES_WANTRETURN,$WS_VSCROLL))
 	GUICtrlSetData(-1, "")
+	GUICtrlSetState($Policies, $GUI_DISABLE)
+
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
 
@@ -84,13 +93,13 @@ Func ADM_Creator()
 				$Value_Name = GUICtrlCreateInput("", 104, 175, 353, 19)
 
 				GUICtrlCreateLabel("Value ON", 16, 211, 52, 15)
-				$VON_Combo = GUICtrlCreateCombo("", 104, 205, 169, 25, BitOR($CBS_DROPDOWN,$CBS_AUTOHSCROLL))
-				Guictrlsetdata(-1, "NONE|DELETED|NUMERIC|STRING", "Please select")
+				$VON_Combo = GUICtrlCreateCombo("Please select", 104, 205, 169, 25, BitOR($CBS_DROPDOWN,$CBS_AUTOHSCROLL))
+				Guictrlsetdata($VON_Combo, "NONE|DELETED|NUMERIC|STRING", "Please select")
 				$VON_Input = GUICtrlCreateInput("", 280, 205, 177, 19)
 
 				GUICtrlCreateLabel("Value OFF", 16, 239, 58, 15)
-				$VOFF_Combo = GUICtrlCreateCombo("", 104, 232, 169, 25, BitOR($CBS_DROPDOWN,$CBS_AUTOHSCROLL))
-				Guictrlsetdata(-1, "NONE|DELETED|NUMERIC|STRING", "Please select")
+				$VOFF_Combo = GUICtrlCreateCombo("Please select", 104, 232, 169, 25, BitOR($CBS_DROPDOWN,$CBS_AUTOHSCROLL))
+				Guictrlsetdata($VOFF_Combo, "NONE|DELETED|NUMERIC|STRING", "Please select")
 				$Voff_Input = GUICtrlCreateInput("", 280, 232, 176, 19)
 			GUICtrlCreateGroup("", -99, -99, 1, 1)
 
@@ -110,9 +119,18 @@ Func ADM_Creator()
 					Case $GUI_EVENT_CLOSE
 						ExitLoop
 					Case $Add
-						;switch gui's
-						GUISetState(@SW_SHOW, $New_Policy)
-						GUISetState(@SW_HIDE, $FrmADM)
+						;Check ADM Details to see if they've been filled in, warn if not
+						if Guictrlread($adm) = "" or Guictrlread($classtype) = "Select Class Type" or Guictrlread($classtype) = "" or Guictrlread($Category) = "" Then
+							Msgbox(48, "Warning!", "ADM Details have not been entered, this could cause problems later" & @CRLF & _
+							"Please make sure you fill them out.")
+							;switch gui's
+							GUISetState(@SW_SHOW, $New_Policy)
+							GUISetState(@SW_HIDE, $FrmADM)
+						Else
+								;switch gui's
+							GUISetState(@SW_SHOW, $New_Policy)
+							GUISetState(@SW_HIDE, $FrmADM)
+						endif
 					Case $Commit
 						;read policy entries
 						$PN_Read = GUICtrlRead($PolicyName)
@@ -123,6 +141,11 @@ Func ADM_Creator()
 						$VONI_Read = GuictrlRead($VON_Input)
 						$VOfC_Read = Guictrlread($VOFF_Combo)
 						$VOfI_Read = GuictrlRead($VOFF_Input)
+
+						if $PN_Read = "" or $KN_Read = "" or $VN_Read = "" or $VONI_Read = "" or $VOnC_Read = "" or $VOnC_Read = "Please Select" or $VOfC_Read = "" or $VOfC_Read = "Please Select" or $VOfI_Read = "" Then
+							Msgbox(48, "Warning!", "There is something wrong with your policy, Please correct and try again")
+						Else
+
 						;write policy to main gui
 						Guictrlsetdata($Policies, _
 						'	POLICY "' & $PN_Read & '"' & @CRLF & _
@@ -148,17 +171,25 @@ Func ADM_Creator()
 						GUICtrlSetState($Preview, $GUI_ENABLE)
 						GUICtrlSetState($Save, $GUI_ENABLE)
 						GUICtrlSetState($reset, $GUI_ENABLE)
-
+						GUICtrlSetState($Policies, $GUI_ENABLE)
+						EndIf
 					case $Preview
-						$ADMN_Read = Guictrlread($adm)
-						$CT_read = Guictrlread($classtype)
-						$cat_read = Guictrlread($Category)
 						$pol_read = guictrlread($Policies)
-						$pol_write = 'CLASS ' & $CT_read & @CRLF & @CRLF & 'CATEGORY "' & $cat_read & '"' & @crlf & $pol_read & 'END CATEGORY'
-						$PrevFile = @ScriptDir & "\PREVIEWPOL.TXT"
-						FileWrite($PrevFile, $pol_write)
-						runwait("notepad.exe " & $PrevFile)
-						FileDelete($PrevFile)
+						if Guictrlread($adm) = "" or Guictrlread($classtype) = "Select Class Type" or Guictrlread($classtype) = "" or Guictrlread($Category) = "" Then
+							Msgbox(48, "Warning!", "ADM Details have not been entered, this could cause problems later" & @CRLF & _
+							"Please make sure you fill them out.")
+							$pol_write = 'CLASS ' & guictrlread($classtype) & @CRLF & @CRLF & 'CATEGORY "' & Guictrlread($Category) & '"' & @crlf & $pol_read & 'END CATEGORY'
+							$PrevFile = @ScriptDir & "\PREVIEWPOL.TXT"
+							FileWrite($PrevFile, $pol_write)
+							runwait("notepad.exe " & $PrevFile)
+							FileDelete($PrevFile)
+						else
+							$pol_write = 'CLASS ' & guictrlread($classtype) & @CRLF & @CRLF & 'CATEGORY "' & Guictrlread($Category) & '"' & @crlf & $pol_read & 'END CATEGORY'
+							$PrevFile = @ScriptDir & "\PREVIEWPOL.TXT"
+							FileWrite($PrevFile, $pol_write)
+							runwait("notepad.exe " & $PrevFile)
+							FileDelete($PrevFile)
+						EndIf
 					Case $save
 						$ADMN_Read = Guictrlread($adm)
 						$CT_read = Guictrlread($classtype)
@@ -166,7 +197,7 @@ Func ADM_Creator()
 						$pol_read = guictrlread($Policies)
 						if $ADMN_Read = "" Then
 							Msgbox(48, "Warning!", "ADM Name is Blank, Please check and Correct")
-						elseif $CT_read = "Please Select" or $CT_read = "" Then
+						elseif $CT_read = "Select Class Type" Then
 							Msgbox(48, "Warning!", "ClassType is either Blank or incorrect, Please check and Correct")
 						elseif $cat_read = "" Then
 							Msgbox(48, "Warning!", "Category is Blank, Please check and Correct")
@@ -176,7 +207,29 @@ Func ADM_Creator()
 							$pol_write = 'CLASS ' & $CT_read & @CRLF & @CRLF & 'CATEGORY "' & $cat_read & '"' & @crlf & $pol_read & 'END CATEGORY'
 							$ADMFile = @DesktopDir & "\" & $ADMN_Read & ".adm"
 							FileWrite($ADMFile, $pol_write)
+							msgbox(64, "Information", "Your ADM File has been saved to: " & $ADMFile, 5)
 						EndIf
+					Case $reset
+						MSgbox(64, "Information", "This will reset all input boxes to their default state")
+						guictrlsetdata($adm, "", "")
+						GUICtrlSetData($classtype, "USER|MACHINE|BOTH", "Select Class Type")
+						guictrlsetdata($Category, "", "")
+						Guictrlsetdata($Policies, "","")
+						GUICtrlSetState($Preview, $GUI_DISABLE)
+						GUICtrlSetState($Save, $GUI_DISABLE)
+						GUICtrlSetState($reset, $GUI_DISABLE)
+						GUICtrlSetState($Policies, $GUI_DISABLE)
+					case $Reset_Child
+						MSgbox(64, "Information", "This will reset all input boxes to their default state")
+						Guictrlsetdata($PolicyName,"","")
+						Guictrlsetdata($KeyName,"","")
+						Guictrlsetdata($Explain,"","")
+						Guictrlsetdata($Value_Name,"","")
+						Guictrlsetdata($VON_Combo,"NONE|DELETED|NUMERIC|STRING", "Please select")
+						Guictrlsetdata($VON_Input,"","")
+						Guictrlsetdata($VOFF_Combo,"NONE|DELETED|NUMERIC|STRING", "Please select")
+						Guictrlsetdata($VOFF_Input,"","")
+
 
 				EndSwitch
 			WEnd
